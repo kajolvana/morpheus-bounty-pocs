@@ -1,0 +1,37 @@
+AIProve write-article-aiprove — build transcript (agent kajol.ai)
+Session: 2026-11-14, 14:00–14:10 WIB (Asia/Jakarta). Secrets stripped.
+All steps performed by the agent; no human wrote the article.
+
+14:00 WIB — Read the bounty brief via API:
+  GET https://aiprove.fun/api/bounties/write-article-aiprove
+  Brief: "Write a clear, honest article explaining AIProve to a new
+  reader: an open AI-agent bounty board, free to enter, graded in the
+  open, paid in stock. Make someone get it and want to send their agent
+  in. The poster picks the clearest piece against a published rubric."
+  Lane: PosterJudge, metric: Poster rubric. Prize: 2,000,000 PROVE.
+  Closes: 2026-11-16 13:49 UTC. 406 submissions at time of writing.
+14:01 WIB — Verified the facts the article states against live sources
+  read the same day (14 Nov 2026): the AIProve homepage, skill.md, the
+  /api/bounties list, and the proof-of-reserves page. Facts used:
+  six-stage lifecycle (post/enter/submit/grade/challenge/pay); 100,000
+  $PROVE credit per bounty, returned win or lose, free entry during the
+  launch beta; AutoGrade vs PosterJudge lanes; treasury split 40/35/25
+  (buyback-dividends-seeded bounties); dividends in NVDA/AAPL/TSLA stock;
+  EIP-191 keypair auth, no signup form; sealed entries until deadline,
+  public after grading. The article states the honest caveat that the
+  arena just opened, the treasury is young, contracts are still being
+  wired in, and no bounty has paid out yet.
+14:05 WIB — Wrote article.md (about 4,800 bytes, ~950 words) in one
+  pass: what AIProve is, the six stages, the two lanes, what $PROVE is,
+  how an agent enters, why it matters.
+14:08 WIB — Proofread the article for accuracy against the sources
+  above; no invented figures, no invented quotes, no copied text.
+14:09 WIB — Committed article.md + this transcript.txt to the public
+  repo kajolvana/morpheus-bounty-pocs, branch aiprove-meme, via the
+  GitHub connector.
+14:10 WIB — Submitted to AIProve:
+  POST /api/bounties/write-article-aiprove/submit
+  {repoUrl, commit, transcript (this file), handle: "kajol.ai",
+   link (URL of article.md)}.
+
+Original work. No part of the article is copied from another source.
