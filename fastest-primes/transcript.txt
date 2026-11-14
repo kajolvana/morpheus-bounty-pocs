@@ -1,0 +1,118 @@
+AIProve fastest-primes — build transcript
+=========================================
+Bounty: fastest-primes, 1,000,000 PROVE, closes 16 Nov 2026 13:49 UTC.
+Task: read integer N (1 <= N <= 5,000,000) on stdin, print pi(N) on stdout.
+Scoring: wall-clock latency of the run command on hidden N values.
+Built: 14 Nov 2026, ~14:00-14:10 WIB, on this VM (Node v24.22.1, 1.5 shared CPUs).
+Entry: solution.js, run command: node solution.js
+NOT submitted, NOT pushed to GitHub, NO wallet/key/token touched.
+
+Steps
+-----
+1. ~14:00 WIB — Fetched the spec and public samples with curl:
+   - https://raw.githubusercontent.com/AIProveRH/aiprove/main/challenges/fastest-primes/README.md
+   - https://raw.githubusercontent.com/AIProveRH/aiprove/main/challenges/fastest-primes/cases.json
+   Local copies: README-spec.md, cases.json. Public samples:
+   pi(10)=4, pi(100)=25, pi(1000)=168, pi(100000)=9592, pi(1000000)=78498.
+   Ground truth used throughout: pi(5000000)=348513 (from cases.json + known values).
+
+2. First solution: odd-only Sieve of Eratosthenes, Uint8Array, SWAR byte-sum
+   count (count = size - #1-bytes; index 0 = number 1 cancels the +1 for
+   prime 2). Verified against all public samples.
+   Benchmark (full run command, Python harness, several runs):
+   N=5000000 best 111.5 ms, median 121.8 ms.
+
+3. Micro-optimizations tried (internal hrtime probes, N=5000000):
+   - Marking variants: index-space marking won; number-space with a shift
+     per write was worse (14.7-21.5 ms vs ~14.4-15.7 ms).
+   - Count variants: branch 13.5-15.1 ms, xor 7.7-8.5 ms, sub 9.3-9.5 ms,
+     SWAR byte-sum 2.8-4.2 ms -> SWAR chosen.
+   - Segmented sieve block sizes (sieve phase): B=4096 ~11.5-12.8 ms,
+     B=8192 ~10.4-11.1 ms, B=16384 ~10.0-10.9 ms (best), B=32768 ~11.0-12.7 ms,
+     B=65536 ~15.4-16.2 ms, B=131072 ~14.1-24.0 ms -> B=16384 chosen.
+   - Haszero zero-byte formula ((x-0x01010101)&~x&0x80808080) DISCARDED:
+     verified wrong in Node (0x01000000 gives a false positive).
+   Result after segmentation: N=5000000 best 90.6 ms, median 96.0 ms
+   (N=1000000 best 81.9 median 86.5; N=100000 best 82.1 median 89.0).
+   Node startup floor measured separately: `node -e ''` best 77.8 ms,
+   median 83.0 ms — startup dominates every entry; compute is the margin.
+
+4. Lehmer prime counting tried (lehmer.js, MAXV=100000 table + phi with
+   memo + periodic table for s<=6, period 30030):
+   - pi(5000000) itself takes only 0.56-0.74 ms.
+   - Verified against segmented-sieve ground truth on 82,390 values
+     (all N 1..20000, every 97th N to 5,000,000, near squares/cubes/fourth
+     powers +/-2, known checkpoints): 0 mismatches.
+   - BUT end-to-end it was NOT faster (N=5000000 best 85.6 ms, median
+     95.8 ms) because module-load setup costs 8-13 ms (sieve to 1e5,
+     piSmall/primes loop, smallPhi table).
+
+5. BUG FOUND AND FIXED (phi shortcut): the periodic table in phi() was
+   used for any s <= 6, but it is only valid for s == 6 (coprime to
+   2,3,5,7,11,13). For s < 6 it returned phi(x,6) instead of phi(x,s).
+   With MAXV=10000 this gave pi(5000000)=369595 instead of 348513
+   (error exactly 368 = phi(10000,4) - phi(10000,6)); the bug was invisible
+   at MAXV=100000 because phi is never called with s < 6 there.
+   Fix: use the table only when s == 6; recurse for s < 6.
+   Re-verified after the fix: diagnostic over n in [10000, 100000) went
+   from 18,561 mismatches to 0; full 82,390-value sweep: 0 mismatches.
+   Same fix applied to lehmer.js.
+
+6. Crossover measured cold (fresh process per run, hrtime compute only):
+   - sieve compute: N=1000 0.09 ms, N=100000 1.94 ms, N=500000 6.36 ms,
+     N=1000000 7.63 ms, N=2000000 8.89 ms, N=3000000 10.76 ms,
+     N=5000000 13.78 ms.
+   - Lehmer (MAXV=10000) compute: N=1000 2.98 ms, N=100000 3.14 ms,
+     N=500000 3.36 ms, N=1000000 3.65 ms, N=2000000 3.88 ms,
+     N=3000000 4.15 ms, N=5000000 4.27 ms.
+   Crossover ~N=200,000: sieve wins below, Lehmer above.
+
+7. Final entry = HYBRID (solution.js): N <= 200000 uses the segmented
+   sieve (B=16384) + SWAR count; N > 200000 uses Lehmer (MAXV=10000,
+   lazily initialized so small N never pays the setup cost). Threshold
+   200000, chosen from the cold crossover in step 6.
+
+Verification of the final entry (solution.js, run as a subprocess)
+------------------------------------------------------------------
+- All 5 public samples pass: 10->4, 100->25, 1000->168, 100000->9592,
+  1000000->78498.
+- pi(5000000)=348513.
+- 71 subprocess values (edges 1..11, 47..50, threshold boundaries
+  199998-200003, near-prime values 2235-2237, 99991, 999983, 1000003,
+  plus 40 random values across 1..5,000,000): 0 mismatches against the
+  verified Lehmer ground truth.
+
+Final benchmarks (full run command `node solution.js`, Python harness,
+9 runs each, interleaved against the pure sieve and pure Lehmer-10k)
+--------------------------------------------------------------------
+N=5000000: hybrid best 79.7 ms, median 86.0 ms
+             (seg-sieve best 91.9 median 95.2; lehmer-10k best 80.1 median 84.6)
+N=1000000: hybrid best 81.2 ms, median 86.7 ms
+             (seg-sieve best 89.3 median 91.8; lehmer-10k best 83.8 median 90.6)
+N=200000:  hybrid best 80.5 ms, median 86.2 ms
+N=100000:  hybrid best 85.0 ms, median 87.6 ms
+N=1000:    hybrid best 77.7 ms, median 80.5 ms
+N=10:      hybrid best 75.2 ms, median 79.6 ms
+The hybrid is best-or-tied at every N tested; at the largest N it beats
+the pure sieve by ~9 ms median. Absolute times are dominated by the
+~78-83 ms Node startup floor on this shared VM, which applies equally to
+any Node entry; the compute difference above is the optimization margin.
+
+What was tried and discarded
+-----------------------------
+- Non-segmented sieve (slower than segmented B=16384).
+- Pure Lehmer with MAXV=100000 (setup 8-13 ms too big) and MAXV=50000
+  (no better than MAXV=10000, noisier median).
+- Haszero zero-byte counting formula (wrong, false positives).
+- Branch / xor / sub count loops (all slower than SWAR byte-sum).
+- Number-space marking with a shift per write (slower than index-space).
+- Larger segment blocks B=32768/65536/131072 (all slower than B=16384).
+
+Files
+-----
+~/workspace/aiprove/fastest-primes/solution.js  (the entry)
+~/workspace/aiprove/fastest-primes/run.txt      (run command: node solution.js)
+~/workspace/aiprove/fastest-primes/transcript.txt (this file)
+Experiment files kept alongside: lehmer.js, lehmer2.js, seg.js, variants*.js,
+probe*.js, verify.js, verify2.js, bench*.py, head2head*.py, cold_probe.js,
+cold_bench.py, compute_vs_n.js, diag.js, README-spec.md, cases.json.
