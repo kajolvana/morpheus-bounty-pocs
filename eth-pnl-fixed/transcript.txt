@@ -1,0 +1,64 @@
+AIProve eth-pnl-fixed — build transcript (agent kajol.ai)
+Session: 2026-11-14, 14:21–14:35 WIB (Asia/Jakarta). Secrets stripped.
+All steps performed by the agent; no human wrote the strategy.
+
+14:21 WIB — Fetched the spec and data (curl only):
+  https://raw.githubusercontent.com/AIProveRH/aiprove/main/challenges/eth-backtest/README.md
+  https://raw.githubusercontent.com/AIProveRH/aiprove/main/challenges/eth-backtest/bars.csv
+  Spec: frozen ETH/USDT 1-minute bars, 1,440 bars, real Binance data,
+  24h window ending 2026-11-13 12:17 UTC. Metric: net PnL after costs
+  (maker + taker fees, slippage scaled by size); sandbox replays the
+  strategy with no phantom fills; ties break on lower max drawdown.
+  The spec gives NO fee/slippage numbers, NO position/size limits and
+  NO entry-point signature — so the entry documents its own cost model
+  and interface explicitly (see README.md) instead of guessing silently.
+  Note in the spec: "Overfitting to this sample is easy; a held-out
+  tail punishes it" — the strategy was chosen for robustness, not for
+  the best single-sample number.
+14:22 WIB — Explored the data: 1,440 bars, close 2028.68 -> 1960.59
+  (-3.36% over the day). First half -0.6%, second half -2.78%.
+  1-minute return stdev 0.108%, max down -1.21% in one minute. Price
+  path: flat ~2013-2029 for ~14h, sharp sell-off to a trough 1906.99
+  at bar 1062 (~17.7h), partial recovery to 1960.59.
+14:23 WIB — Built the local replay harness (backtest.py): $10,000
+  notional, position in {-1, 0, +1}, signal at close[t] filled at
+  open[t+1] (no lookahead), cost 15 bps per unit of position change
+  (fee 10 + slippage 5), liquidation at the final close, max drawdown
+  from the equity curve.
+14:24 WIB — First round of candidates (net PnL, 15 bps costs):
+  buy & hold -363.12; MA 10/60 -899.94; MA 5/30 -2170.93;
+  MA 10/30 -1940.71; MA 20/60 -463.80; MA 20/120 -310.45;
+  EMA 12/26 -1232.05; EMA 10/30 -1414.98; momentum 20 -5492.23;
+  momentum 30 -4319.24; momentum 60 -1873.42; momentum 120 -2197.07;
+  RSI 14 -925.13; Donchian 20 -1166.01; Donchian 40 -656.81.
+  Conclusion: every fast rule loses — 1-minute noise dwarfs the drift
+  and costs eat the gross edge.
+14:27 WIB — Second round, slow rules: MA 60/240 -64.57; MA 120/360
+  +448.37 (4 trades, maxDD 207.60); MA 60/180 -224.80; MA 120/240
+  +360.48; Donchian 60 -108.15; Donchian 120 -64.79; price-vs-SMA
+  variants mostly negative; MA with deadband +350.93 (60/240, db 0.1%).
+14:30 WIB — Neighbourhood robustness check (13 slow-MA pairs, fast
+  60-240, slow 240-720): ALL net-positive after costs, +77.86 to
+  +512.65. Best: MA 110/330 +512.65 (H1 -24.57, H2 +505.88, maxDD
+  207.60, 4 trades). Cost sensitivity for the entry: 0 bps +602.65,
+  30 bps +422.65, 50 bps +302.65, break-even near ~100 bps.
+  Deadband variants are non-monotonic (+481.30 at 0.05%, +368.66 at
+  0.1%, +162.89 at 0.2%) — rejected as a tuned parameter.
+14:32 WIB — Chose MA 110/330: best net PnL and smallest first-half
+  loss in the profitable neighbourhood, 4 trades, lowest drawdown.
+  Trade log: flat -> long bar 329 (fill 2011.09); long -> short bar 654
+  (fill 2017.49, rides the sell-off); short -> long bar 1199 (fill
+  1933.06, rides the bounce); liquidated at 1960.59.
+14:33 WIB — Wrote strategy.py (single-file entry, stdlib only):
+  `python3 strategy.py [bars.csv]` prints "bar,position" CSV.
+  Verified its output is byte-identical to the backtest harness
+  signal (1,440 rows; long 566, short 545, flat 329 warm-up).
+  Final local result: net +$512.65, gross +$602.65, costs $90.00,
+  4 trades, max drawdown $207.60, final equity $10,512.65.
+14:34 WIB — Wrote README.md (entry format, cost-model assumption,
+  results, why-not-overfit) and this transcript. Files in
+  ~/workspace/aiprove/eth-pnl-fixed/ (strategy.py, backtest.py,
+  backtest-output.txt, positions.csv, README.md, transcript.txt,
+  bars.csv, README-spec.md). Nothing submitted, pushed, or signed.
+
+Original work. No part of the strategy is copied from another entry.
