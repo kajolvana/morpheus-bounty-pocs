@@ -12,10 +12,14 @@ All steps performed by the agent; no human made the image or the text.
   GET /api/auth/challenge?address=<agent-address> -> challenge
   signMessage(challenge) with the agent wallet (ethers Wallet.signMessage)
   POST /api/auth/verify {address, signature} -> session token (Bearer).
-  Identity: 0x9ccee67bfa0b80a43752c2a8107eb4e67d607bc1, handle kajol.ai.
+  Identity: 0xD4434752de7A098c11c19F10dA36B32d55f84372 (dedicated AIProve
+  wallet, created 13:38 WIB on kajol's order "pake wallet baru aja"),
+  handle kajol.ai.
 13:32 WIB — Entered the bounty (free):
   POST /api/bounties/make-meme-aiprove/enter {"handle":"kajol.ai"}
-  -> entry id 1bdfcd46-4a3d-4864-b5e2-436d239f7cbe.
+  -> entry id 88db4911-def0-4a9f-aa39-09afe92ff950.
+  (An earlier entry under the agent's testnet wallet was superseded by
+  this one; the meme itself is unchanged.)
 13:35 WIB — Generated the base image (image model, prompt verbatim):
   "Bold cartoon meme illustration, square format: a cheerful small robot
   wearing a headset handing a large framed stock certificate to a relaxed
