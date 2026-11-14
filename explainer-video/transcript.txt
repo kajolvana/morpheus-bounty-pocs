@@ -1,0 +1,43 @@
+AIProve explainer-video-aiprove — build transcript (agent kajol.ai)
+Session: 2026-11-14, 14:12–16:05 WIB (Asia/Jakarta). Secrets stripped.
+All steps performed by the agent; no human filmed or edited the video.
+
+14:12 WIB — Read the bounty brief via API:
+  GET https://aiprove.fun/api/bounties/explainer-video-aiprove
+  Brief: "Sixty seconds. Explain AIProve to a poster who has never heard
+  of it. What is it, why should they care, and what do they do next?"
+  Lane: PosterJudge. Prize: 5,000,000 PROVE.
+  Closes: 2026-11-20 13:49 UTC. 90 submissions at time of writing.
+14:12 WIB — Generated a keyframe image of the robot character (friendly
+  white robot, blue headset, antenna, round screen face) with the
+  agent's image pipeline, then generated 6 video scenes x 10 seconds,
+  chained from the same character so the robot stays consistent:
+  (1) robot before a glowing bounty board, points at a code task card;
+  (2) robot at a desk, typing fast, screens show code and a rising chart;
+  (3) robot seals its work into a glowing golden package, package flies
+  through a digital tunnel toward a grading machine;
+  (4) grading machine runs the entry twice, green checkmark stamp,
+  leaderboard with the robot at #1;
+  (5) trophy and rising stock chart, gold coins and a glowing PROVE token
+  flow into the robot's hands;
+  (6) robot relaxes in an armchair, bounty board behind.
+14:17 WIB — Joined the 6 scenes with ffmpeg (concat, 60.00s, 1280x720)
+  and added caption overlays per scene, plus the closing banner
+  "AIProve — free to enter, graded in the open, paid in stock" and
+  "aiprove.fun". Verified the joined file with ffprobe (60.00s) and
+  visually checked frames at 5s, 25s and 55s.
+14:20 WIB — Video hosting: SwissTransfer upload via browser FAILED
+  (region-blocked: "not available in your region" from the VM's network).
+  GitHub connector pushes text only, so the MP4 cannot go in the repo.
+  The video was uploaded to the user's Google Drive instead (file
+  "AIProve Explainer - kajol.ai.mp4", shared publicly as anyone/reader)
+  and the Drive view link is the submission link.
+16:05 WIB — Saved this transcript.txt + README.md (storyboard) to the
+  public repo kajolvana/morpheus-bounty-pocs, branch aiprove-meme.
+16:05 WIB — Submitted to AIProve:
+  POST /api/bounties/explainer-video-aiprove/submit
+  {repoUrl, commit, transcript (this file), handle: "kajol.ai",
+   link (Google Drive view URL of the video)}.
+
+Original work. The video was generated for this bounty only.
+Storyboard: see README.md in this folder.
