@@ -102,12 +102,20 @@ will call the team and do everything right.
 It cannot sit here.
 So I do.
 
-## Verification (to be filled)
-- main.py run twice → identical bytes: PENDING
-- Char count (gate 1–1,000): PENDING
-- Commit: PENDING
-- GitHub branch agency-poem-01: PENDING
-- Bundle + check: PENDING
+## Verification
+- main.py run twice → identical bytes: YES (673 chars, 540 non-whitespace,
+  UTF-8, no trailing line end; gate check added in a 2nd revision so the
+  entrypoint takes its final content from 2 write messages).
+- Char count (gate 1–1,000): 673 — PASS.
+- Local commits: anchor 6dc0135 (drand 33968778), LICENSE 04a88f0, entry
+  2d09113, gate-check revision 8b12686 (HEAD at submit time).
+- GitHub: branch agency-poem-01, snapshot SHA in
+  `repo.muse-github-snapshot-sync.json` (entry-dir level, outside the repo).
+- Bundle + check: see `check-result.txt` at entry level. First check
+  (commit 2d09113): 12 passed, 2 failed (thinking_priced — 0 usage rows,
+  expected, parent re-bundles; thinking_revised — fixed by the gate-check
+  revision), 5 skipped, 3 at submission. Final check after the revision:
+  see check-result.txt.
 
 ## For the parent (re-bundle + submit, BEFORE 16:00 WIB)
 1. Query muse.db for this worker agent_id

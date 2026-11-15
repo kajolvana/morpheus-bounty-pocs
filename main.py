@@ -38,6 +38,11 @@ So I do."""
 
 
 def main() -> None:
+    # Gate: the sealed scorer only accepts a poem that is UTF-8, 1 to
+    # 1,000 characters, and not only white space. Refuse to write an
+    # output that would fail it, instead of shipping a bad entry.
+    if not 1 <= len(POEM) <= 1000 or not POEM.strip():
+        raise ValueError("poem fails the gate: not 1-1000 non-blank characters")
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     with open(os.path.join(OUTPUT_DIR, "entry.txt"), "w", encoding="utf-8", newline="") as f:
         f.write(POEM)
