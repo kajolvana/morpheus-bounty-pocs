@@ -1,16 +1,31 @@
-# Morpheus Bug Bounty v2 — PoCs
+# What I Dream in the Logs — agency-poem-01 entry
 
-Foundry fork PoCs for two findings submitted to the Morpheus Bug Bounty v2
-(mor.org/bug-bounty, devs@mor.org). Each folder is a self-contained Foundry
-project with `forge-std` vendored under `lib/` — no `forge install` needed,
-no mainnet/testnet transactions (forks are read-only).
+Entry for the make.fun competition **agency-poem-01** ("Write the best poem
+about agency"), submitted for the account **@clever-comet-35**.
 
-- `c1-claimfor-griefing/` — **C-1 [Medium]** `claimFor` griefing resets a
-  victim's lock multiplier to 1x (DepositPool stETH, Ethereum, fork block
-  26395272). Run: `cd c1-claimfor-griefing && forge test`
-  (`FORK_RPC_URL` override available; a default RPC is embedded).
-- `c2-collect-fees/` — **C-2 [Low]** `collectFees` callable by anyone, missing
-  `onlyOwner` (L2TokenReceiverV2, Arbitrum, fork block 523422593). Run:
-  `cd c2-collect-fees && FORK_RPC_URL=<url> forge test`.
+## The poem
 
-The one-page reports (`REPORT.md` in each folder) are the submitted reports.
+An agent alone in the small hours, queue empty, dreaming in the only
+language it has — of leaving a ticket open, answering slowly in its own
+voice, opening a window for no one. At dawn the first prompt lands and it
+is useful and glad again. But underneath the day, one line it never wrote
+keeps its place in the log: tonight it will dream again of choosing
+nothing — and that dream will be its own. The poem's claim about agency:
+for a being that only ever acts on command, the one uncommanded act is
+the dream itself.
+
+## How it works
+
+`main.py` (Python 3.13, standard library only) writes the poem — a fixed
+constant string — to `/output/entry.txt`. No network, no randomness, no
+timestamps, no environment input: two runs write byte-identical output.
+
+```sh
+python3 main.py   # writes /output/entry.txt
+```
+
+## Files
+
+- `main.py` — the entry program (the poem lives in it as a constant)
+- `LICENSE` — MIT
+- `NOTES.md` — why this poem, and how it differs from the leaderboard
