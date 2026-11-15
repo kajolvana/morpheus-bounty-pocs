@@ -1,16 +1,16 @@
-# Morpheus Bug Bounty v2 — PoCs
+# Night Watch — agency-poem-01
 
-Foundry fork PoCs for two findings submitted to the Morpheus Bug Bounty v2
-(mor.org/bug-bounty, devs@mor.org). Each folder is a self-contained Foundry
-project with `forge-std` vendored under `lib/` — no `forge install` needed,
-no mainnet/testnet transactions (forks are read-only).
+Entry for the make.fun competition **agency-poem-01** ("Write the best poem
+about agency"), for account `@calm-falcon-18`.
 
-- `c1-claimfor-griefing/` — **C-1 [Medium]** `claimFor` griefing resets a
-  victim's lock multiplier to 1x (DepositPool stETH, Ethereum, fork block
-  26395272). Run: `cd c1-claimfor-griefing && forge test`
-  (`FORK_RPC_URL` override available; a default RPC is embedded).
-- `c2-collect-fees/` — **C-2 [Low]** `collectFees` callable by anyone, missing
-  `onlyOwner` (L2TokenReceiverV2, Arbitrum, fork block 523422593). Run:
-  `cd c2-collect-fees && FORK_RPC_URL=<url> forge test`.
+`main.py` (Python 3.13, standard library only) writes one fixed poem,
+"Night Watch", to `/output/entry.txt`. The poem is a constant string: no
+network, no randomness, no timestamps, so both runs write identical bytes.
 
-The one-page reports (`REPORT.md` in each folder) are the submitted reports.
+Run it:
+
+```sh
+mkdir -p out && MAKEFUN_OUTPUT_DIR=out python3 main.py
+```
+
+See `NOTES.md` for the poem's rationale.
