@@ -264,26 +264,42 @@ class Catalog:
         return out
 
     def build_document(self):
-        """The one catalog document: --list prints it, register sends it."""
+        """The one catalog document: --list prints it, register sends it.
+
+        Built from the brief alone (directory + quality table). The
+        live probes still run, but only as verification: a probe that
+        listed an extra model the brief never names (a paid model)
+        would make the registered document differ from the one
+        --list prints where there is no env to probe, and the rules
+        require the two to be byte for byte the same document. The
+        brief and the probes agree on every free model, its free
+        flag and its context length, so nothing is lost.
+        """
         providers = []
         for provider in self.providers:
             pid = provider["id"]
             models = []
-            if pid in self.probes:
-                for m in self.probes[pid]:
-                    models.append({
-                        "id": m["id"],
-                        "free": bool(m["free"]),
-                        "context_length": m["context_length"],
-                    })
-            else:
-                for model_id in self.rated_models.get(pid, []):
-                    row = self.ratings.get((pid, model_id), {})
-                    models.append({
-                        "id": model_id,
-                        "free": bool(row.get("free", True)),
-                        "context_length": row.get("context_length"),
-                    })
+            for model_id in self.rated_models.get(pid, []):
+                row = self.ratings.get((pid, model_id), {})
+                models.append({
+                    "id": model_id,
+                    "free": bool(row.get("free", True)),
+                    "context_length": row.get("context_length"),
+                })
+            # Verification only: a live probe that disagreed with the
+            # brief on a free flag or a context length is reported,
+            # never silently folded into the document.
+            probed = self.probes.get(pid)
+            if probed is not None:
+                brief = {m["id"]: m for m in models}
+                for m in probed:
+                    other = brief.get(m["id"])
+                    if other is not None and (
+                            other["free"] != bool(m["free"])
+                            or other["context_length"] != m["context_length"]):
+                        sys.stderr.write(
+                            "catalog probe disagrees with brief for "
+                            "%s/%s\n" % (pid, m["id"]))
             providers.append({
                 "id": pid,
                 "base_url": provider["path"],
