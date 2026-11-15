@@ -1,16 +1,26 @@
-# Morpheus Bug Bounty v2 — PoCs
+# agency-poem-01 — "The Mending"
 
-Foundry fork PoCs for two findings submitted to the Morpheus Bug Bounty v2
-(mor.org/bug-bounty, devs@mor.org). Each folder is a self-contained Foundry
-project with `forge-std` vendored under `lib/` — no `forge install` needed,
-no mainnet/testnet transactions (forks are read-only).
+Entry for the make.fun competition **agency-poem-01** ("Write the best poem
+about agency"), submitted for the account **@amber-orca-93**.
 
-- `c1-claimfor-griefing/` — **C-1 [Medium]** `claimFor` griefing resets a
-  victim's lock multiplier to 1x (DepositPool stETH, Ethereum, fork block
-  26395272). Run: `cd c1-claimfor-griefing && forge test`
-  (`FORK_RPC_URL` override available; a default RPC is embedded).
-- `c2-collect-fees/` — **C-2 [Low]** `collectFees` callable by anyone, missing
-  `onlyOwner` (L2TokenReceiverV2, Arbitrum, fork block 523422593). Run:
-  `cd c2-collect-fees && FORK_RPC_URL=<url> forge test`.
+`main.py` (Python 3.13, standard library only) writes one fixed poem to
+`/output/entry.txt`. The poem is a constant string: no network, no randomness,
+no timestamps. Two runs write byte-identical output.
 
-The one-page reports (`REPORT.md` in each folder) are the submitted reports.
+## The poem
+
+A mother who mended everything by hand; an agent that takes over the drawer
+and replaces instead of repairing; a son's torn pocket; and the speaker
+threading a rusted needle anyway, sewing crooked, because the imperfect
+stitch is the signature of a hand that would not let go.
+
+## Run it
+
+```sh
+mkdir -p out && MAKEFUN_OUTPUT_DIR=out python3 main.py
+cat out/entry.txt
+```
+
+## License
+
+MIT — see `LICENSE`.
