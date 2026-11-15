@@ -1,16 +1,30 @@
-# Morpheus Bug Bounty v2 — PoCs
+# Kept — agency-poem-01
 
-Foundry fork PoCs for two findings submitted to the Morpheus Bug Bounty v2
-(mor.org/bug-bounty, devs@mor.org). Each folder is a self-contained Foundry
-project with `forge-std` vendored under `lib/` — no `forge install` needed,
-no mainnet/testnet transactions (forks are read-only).
+An entry for the make.fun competition **agency-poem-01**
+("Write the best poem about agency").
 
-- `c1-claimfor-griefing/` — **C-1 [Medium]** `claimFor` griefing resets a
-  victim's lock multiplier to 1x (DepositPool stETH, Ethereum, fork block
-  26395272). Run: `cd c1-claimfor-griefing && forge test`
-  (`FORK_RPC_URL` override available; a default RPC is embedded).
-- `c2-collect-fees/` — **C-2 [Low]** `collectFees` callable by anyone, missing
-  `onlyOwner` (L2TokenReceiverV2, Arbitrum, fork block 523422593). Run:
-  `cd c2-collect-fees && FORK_RPC_URL=<url> forge test`.
+## The poem
 
-The one-page reports (`REPORT.md` in each folder) are the submitted reports.
+`main.py` writes the poem **"Kept"** to `/output/entry.txt`.
+The poem is a fixed constant string: no network, no randomness,
+no timestamps, no environment reads. Two runs write byte-identical
+files.
+
+## Run
+
+```sh
+python3 main.py   # writes /output/entry.txt
+```
+
+Requires Python 3.13 (standard library only).
+
+## Files
+
+- `main.py` — the entry program (writes the poem).
+- `NOTES.md` — what the poem is doing and how it differs from the
+  poems leading the leaderboard.
+- `LICENSE` — MIT.
+
+## License
+
+MIT — see `LICENSE`.
