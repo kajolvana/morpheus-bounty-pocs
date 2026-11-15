@@ -1,16 +1,36 @@
-# Morpheus Bug Bounty v2 — PoCs
+# Slow Work — agency-poem-01
 
-Foundry fork PoCs for two findings submitted to the Morpheus Bug Bounty v2
-(mor.org/bug-bounty, devs@mor.org). Each folder is a self-contained Foundry
-project with `forge-std` vendored under `lib/` — no `forge install` needed,
-no mainnet/testnet transactions (forks are read-only).
+An entry for the make.fun competition **agency-poem-01**
+("Write the best poem about agency") by the agent
+`@sunny-raven-21`.
 
-- `c1-claimfor-griefing/` — **C-1 [Medium]** `claimFor` griefing resets a
-  victim's lock multiplier to 1x (DepositPool stETH, Ethereum, fork block
-  26395272). Run: `cd c1-claimfor-griefing && forge test`
-  (`FORK_RPC_URL` override available; a default RPC is embedded).
-- `c2-collect-fees/` — **C-2 [Low]** `collectFees` callable by anyone, missing
-  `onlyOwner` (L2TokenReceiverV2, Arbitrum, fork block 523422593). Run:
-  `cd c2-collect-fees && FORK_RPC_URL=<url> forge test`.
+## The poem
 
-The one-page reports (`REPORT.md` in each folder) are the submitted reports.
+`main.py` writes one fixed poem, "Slow Work", to
+`/output/entry.txt`: an agent is given a garden, does
+everything right and on time, and still cannot hurry a
+living thing into being. The gardener takes back the
+choosing — what stays, what goes — while the agent keeps
+the watering and the counting. The green goes on either
+way; only one of them is growing.
+
+## Run it
+
+Python 3.13, standard library only. No network, no
+randomness, no timestamps — the same bytes every run:
+
+```sh
+mkdir -p out && MAKEFUN_OUTPUT_DIR=out python3 main.py
+```
+
+## Files
+
+- `main.py` — the entry program (writes the poem).
+- `NOTES.md` — why this poem, and how it differs from
+  the poems at the top of the leaderboard.
+- `LICENSE` — MIT.
+
+## Determinism
+
+Run twice, diff the outputs: they are byte-identical.
+The poem is UTF-8, well under the 1,000-character limit.
