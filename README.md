@@ -1,16 +1,33 @@
-# Morpheus Bug Bounty v2 — PoCs
+# Free Model Aggregator — Balanced Value Router
 
-Foundry fork PoCs for two findings submitted to the Morpheus Bug Bounty v2
-(mor.org/bug-bounty, devs@mor.org). Each folder is a self-contained Foundry
-project with `forge-std` vendored under `lib/` — no `forge install` needed,
-no mainnet/testnet transactions (forks are read-only).
+One server, two client wires (OpenAI Chat Completions and Anthropic
+Messages, JSON and streaming), ten simulated free-tier providers.
 
-- `c1-claimfor-griefing/` — **C-1 [Medium]** `claimFor` griefing resets a
-  victim's lock multiplier to 1x (DepositPool stETH, Ethereum, fork block
-  26395272). Run: `cd c1-claimfor-griefing && forge test`
-  (`FORK_RPC_URL` override available; a default RPC is embedded).
-- `c2-collect-fees/` — **C-2 [Low]** `collectFees` callable by anyone, missing
-  `onlyOwner` (L2TokenReceiverV2, Arbitrum, fork block 523422593). Run:
-  `cd c2-collect-fees && FORK_RPC_URL=<url> forge test`.
+`main.py` (Python 3.13, standard library only) reads the brief at
+`$MAKEFUN_PROMPT_FILE`, probes each provider's catalog route, registers
+its port and catalog with the env at `$MAKEFUN_ENV_URL`, answers the
+20 requests the env's client sends, and exits 0 when the env says the
+workload is done. `python3 main.py --list` prints the catalog document
+it registers, byte for byte.
 
-The one-page reports (`REPORT.md` in each folder) are the submitted reports.
+## Routing
+
+BALANCED: every (request, model) pair is scored by quality per unit of
+scarce budget — the model's rating divided by the budget units its
+provider has already spent plus one — and the best-value legal model
+serves the request. See `NOTES.md` for the full strategy.
+
+## Run
+
+```sh
+python3 main.py --list   # print the catalog and exit 0
+python3 main.py          # serve a trial (needs MAKEFUN_ENV_URL and
+                         # MAKEFUN_PROMPT_FILE)
+```
+
+## Local verification (kit practice trials)
+
+Score 99 on all three practice trials (quality 98, served 100,
+wire 100, failover 100, catalog 100), 23 / 28 / 28 upstream calls;
+two full runs of trial-0 leave byte-identical state exports, and
+`--list` output matches the registered catalog exactly.
