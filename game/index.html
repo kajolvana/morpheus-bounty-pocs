@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>TIDEFORGE — 5v5 tactical FPS</title>
+<style>
+  /* TIDEFORGE look: deep teal steel, rust orange, sodium amber, one accent. */
+  :root {
+    --canvas: #10181c; --surface: #182226; --hairline: #2e3d40;
+    --ink: #e9e6df; --muted: #93a3a6; --accent: #2fd6a8; --amber: #ffb347;
+    --danger: #ff5a3c; --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-readout: ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--canvas); color: var(--ink); font-family: var(--font-ui); }
+  #game, #game canvas { position: fixed; inset: 0; display: block; }
+  #hud { position: fixed; inset: 0; pointer-events: none; }
+  [hidden] { display: none !important; }
+
+  #crosshair { position: fixed; left: 50%; top: 50%; width: 22px; height: 22px; transform: translate(-50%, -50%); }
+  #crosshair i { position: absolute; background: var(--ink); opacity: .9; }
+  #crosshair i:nth-child(1) { left: 10px; top: 0; width: 2px; height: 7px; }
+  #crosshair i:nth-child(2) { left: 10px; bottom: 0; width: 2px; height: 7px; }
+  #crosshair i:nth-child(3) { top: 10px; left: 0; height: 2px; width: 7px; }
+  #crosshair i:nth-child(4) { top: 10px; right: 0; height: 2px; width: 7px; }
+  #hitmarker { position: fixed; left: 50%; top: 50%; width: 28px; height: 28px; transform: translate(-50%, -50%) rotate(45deg); opacity: 0; }
+  #hitmarker.on { opacity: 1; }
+  #hitmarker.head i { background: var(--danger); }
+  #hitmarker i { position: absolute; background: var(--accent); }
+  #hitmarker i:nth-child(1) { left: 13px; top: 0; width: 2px; height: 9px; }
+  #hitmarker i:nth-child(2) { left: 13px; bottom: 0; width: 2px; height: 9px; }
+  #hitmarker i:nth-child(3) { top: 13px; left: 0; height: 2px; width: 9px; }
+  #hitmarker i:nth-child(4) { top: 13px; right: 0; height: 2px; width: 9px; }
+
+  /* Top bar: round, timer, score. */
+  #topbar { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); display: flex; gap: 14px; align-items: center; font-family: var(--font-readout); }
+  #round-label { font-size: 12px; letter-spacing: .12em; color: var(--muted); }
+  #timer { font-size: 26px; font-weight: 600; }
+  #timer.urgent { color: var(--danger); }
+  #phase-label { font-size: 12px; letter-spacing: .12em; color: var(--accent); }
+  #score-line { font-size: 20px; font-weight: 600; }
+
+  #minimap { position: fixed; top: 14px; left: 14px; width: 168px; height: 126px; border: 1px solid var(--hairline); border-radius: 4px; }
+
+  /* Bottom-left: health + armor. */
+  #vitals { position: fixed; left: 24px; bottom: 22px; width: 220px; }
+  #health-row { display: flex; align-items: baseline; gap: 10px; font-family: var(--font-readout); }
+  #health-num { font-size: 44px; line-height: 1; }
+  #armor-num { font-size: 14px; color: var(--accent); }
+  #health-track { height: 6px; background: var(--hairline); border-radius: 3px; margin-top: 6px; overflow: hidden; }
+  #health-bar { height: 100%; width: 100%; background: var(--accent); }
+  #health-bar.low { background: var(--danger); }
+  #kills { margin-top: 6px; font-size: 12px; color: var(--muted); font-family: var(--font-readout); }
+
+  /* Bottom-right: ammo + money. */
+  #ammo { position: fixed; right: 28px; bottom: 22px; text-align: right; font-family: var(--font-readout); }
+  #ammo.empty #ammo-mag { color: var(--danger); }
+  #ammo-mag { font-size: 52px; line-height: 1; }
+  #ammo-reserve { font-size: 16px; color: var(--muted); }
+  #weapon-name { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  #money { font-size: 20px; color: var(--amber); margin-top: 2px; }
+  #grenades { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  #hint { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); font-size: 12px; color: var(--muted); }
+
+  /* Feeds. */
+  #killfeed { position: fixed; top: 14px; right: 14px; display: flex; flex-direction: column; gap: 4px; align-items: flex-end; font-size: 13px; }
+  .feed-line { background: rgba(16,24,28,.8); border: 1px solid var(--hairline); padding: 4px 8px; border-radius: 4px; transition: opacity 1s; }
+  .feed-line.ally { border-color: var(--accent); }
+  .feed-line.foe { border-color: var(--danger); }
+  .feed-line.fade { opacity: 0; }
+  #radio-feed { position: fixed; left: 14px; top: 152px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; max-width: 320px; }
+  .radio-line { color: var(--accent); background: rgba(16,24,28,.75); padding: 4px 8px; border-radius: 4px; transition: opacity 1s; }
+  .radio-line.fade { opacity: 0; }
+
+  /* Centre banner. */
+  #banner { position: fixed; top: 22%; left: 50%; transform: translateX(-50%); text-align: center; }
+  #banner-title { font-size: 42px; font-weight: 700; letter-spacing: .06em; text-shadow: 0 2px 12px rgba(0,0,0,.7); }
+  #banner-sub { font-size: 15px; color: var(--muted); margin-top: 6px; }
+
+  /* Plant / defuse bar. */
+  #plant-bar { position: fixed; left: 50%; top: 58%; transform: translateX(-50%); width: 280px; text-align: center; }
+  #plant-label { font-size: 13px; letter-spacing: .1em; color: var(--amber); margin-bottom: 6px; }
+  #plant-track { height: 8px; background: var(--hairline); border-radius: 4px; overflow: hidden; }
+  #plant-fill { height: 100%; width: 0; background: var(--amber); }
+
+  /* Sniper scope overlay: a real circular mask, not just an FOV change. */
+  #scope { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(circle at 50% 50%, transparent 0 31vmin, rgba(4,8,10,.97) 32vmin); }
+  #scope::before, #scope::after { content: ''; position: absolute; background: rgba(233,230,223,.85); }
+  #scope::before { left: 50%; top: 0; bottom: 0; width: 1px; transform: translateX(-.5px); }
+  #scope::after { top: 50%; left: 0; right: 0; height: 1px; transform: translateY(-.5px); }
+  #scope-ring { position: fixed; left: 50%; top: 50%; width: 62vmin; height: 62vmin; transform: translate(-50%, -50%); border: 2px solid rgba(233,230,223,.7); border-radius: 50%; }
+  #flash { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+
+  /* Overlays + buy menu (pointer-events on for clicks). */
+  .overlay { position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(16,24,28,.86); pointer-events: auto; }
+  .panel { width: min(460px, 100%); padding: 32px; background: var(--surface); border: 1px solid var(--hairline); border-radius: 6px; }
+  .panel h1 { margin: 0 0 8px; font-size: 34px; letter-spacing: .02em; }
+  .panel h1 span { color: var(--accent); }
+  .panel p { margin: 0 0 20px; font-size: 15px; line-height: 1.55; color: var(--muted); }
+  #play { font: inherit; font-weight: 600; padding: 12px 20px; border: 1px solid var(--accent); border-radius: 8px; background: var(--accent); color: #0c1214; cursor: pointer; }
+  #play:hover { background: var(--ink); border-color: var(--ink); }
+  .keys { margin: 22px 0 0; padding: 0; list-style: none; display: grid; gap: 7px; font-size: 13px; color: var(--muted); }
+  .keys kbd { padding: 2px 6px; border: 1px solid var(--hairline); border-radius: 4px; font-family: var(--font-readout); font-size: 12px; color: var(--ink); }
+
+  #buy-menu .panel { width: min(560px, 100%); }
+  #buy-menu h2 { margin: 0 0 4px; font-size: 24px; }
+  #buy-money { font-family: var(--font-readout); color: var(--amber); font-size: 18px; margin-bottom: 16px; }
+  .buy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .buy-grid button { font: inherit; text-align: left; padding: 10px 12px; background: var(--canvas); color: var(--ink); border: 1px solid var(--hairline); border-radius: 6px; cursor: pointer; }
+  .buy-grid button:hover { border-color: var(--accent); }
+  .buy-grid button b { display: block; font-size: 14px; }
+  .buy-grid button span { font-size: 12px; color: var(--muted); }
+  .buy-grid button .price { float: right; color: var(--amber); font-family: var(--font-readout); }
+  #buy-close { margin-top: 14px; font: inherit; padding: 8px 14px; background: transparent; color: var(--ink); border: 1px solid var(--hairline); border-radius: 6px; cursor: pointer; }
+  @media (prefers-reduced-motion: reduce) { .feed-line, .radio-line { transition: none; } }
+</style>
+</head>
+<body>
+<div id="game"></div>
+
+<div id="hud" aria-hidden="true">
+  <canvas id="minimap" width="168" height="126"></canvas>
+  <div id="topbar">
+    <span id="round-label">ROUND 1 / 13</span>
+    <span id="timer">1:40</span>
+    <span id="phase-label">BUY PHASE</span>
+    <span id="score-line">0 — 0</span>
+  </div>
+  <div id="killfeed"></div>
+  <div id="radio-feed"></div>
+  <div id="banner" hidden><div id="banner-title"></div><div id="banner-sub"></div></div>
+  <div id="plant-bar" hidden><div id="plant-label"></div><div id="plant-track"><div id="plant-fill"></div></div></div>
+  <div id="vitals">
+    <div id="health-row"><span id="health-num">100</span><span id="armor-num"></span></div>
+    <div id="health-track"><div id="health-bar"></div></div>
+    <div id="kills">K 0 · D 0</div>
+  </div>
+  <div id="ammo"><span id="ammo-mag">12</span><span id="ammo-reserve">/ 48</span><div id="weapon-name">Tide Pistol</div><div id="money">$800</div><div id="grenades"></div></div>
+  <div id="hint"></div>
+  <div id="crosshair"><i></i><i></i><i></i><i></i></div>
+  <div id="hitmarker"><i></i><i></i><i></i><i></i></div>
+  <div id="scope" hidden><div id="scope-ring"></div></div>
+  <div id="flash"></div>
+</div>
+
+<div id="overlay" class="overlay">
+  <section class="panel" role="dialog" aria-modal="true" aria-labelledby="overlay-title">
+    <h1 id="overlay-title">TIDE<span>FORGE</span></h1>
+    <p>A 5v5 round-based tactical FPS in a tidal-power foundry. Harborjackets plant the Tide Core at Furnace Hall or the Pump Gallery; Foundry Wardens hold the sites. Win the round, earn money, buy better guns. Stopping to aim pays — spraying on the move does not.</p>
+    <button id="play" type="button">Click to play</button>
+    <ul class="keys">
+      <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move · <kbd>Shift</kbd> walk quiet · <kbd>Ctrl</kbd> crouch · <kbd>Space</kbd> jump</li>
+      <li><kbd>Mouse</kbd> look · <kbd>Click</kbd> fire · <kbd>RMB</kbd> aim (scope on the Longtide) · <kbd>R</kbd> reload</li>
+      <li><kbd>B</kbd> buy menu · <kbd>E</kbd> hold to plant / defuse · <kbd>4</kbd>/<kbd>5</kbd>/<kbd>6</kbd> throw smoke / flash / surge</li>
+    </ul>
+  </section>
+</div>
+
+<div id="buy-menu" class="overlay" hidden>
+  <section class="panel" role="dialog" aria-modal="true" aria-labelledby="buy-title">
+    <h2 id="buy-title">Buy — TIDEFORGE armoury</h2>
+    <div id="buy-money">$800</div>
+    <div class="buy-grid">
+      <button type="button" data-buy="w:tidepistol"><b>TP-9 Tide Pistol <span class="price">$0</span></b><span>12-round sidearm · reliable</span></button>
+      <button type="button" data-buy="w:gale"><b>GALE-9 SMG <span class="price">$1500</span></b><span>fast, close quarters · 32 rounds</span></button>
+      <button type="button" data-buy="w:forge"><b>FORGE-7 Rifle <span class="price">$2700</span></b><span>accurate, hard-hitting · 30 rounds</span></button>
+      <button type="button" data-buy="w:breaker"><b>BRK-12 Shotgun <span class="price">$1800</span></b><span>8 pellets · devastating up close</span></button>
+      <button type="button" data-buy="w:longtide"><b>LNG-50 Longtide <span class="price">$4750</span></b><span>one-shot sniper · real scope overlay</span></button>
+      <button type="button" data-buy="armor"><b>Foundry Plate <span class="price">$650</span></b><span>absorbs half of incoming damage</span></button>
+      <button type="button" data-buy="g:smoke"><b>Tide Smoke <span class="price">$300</span></b><span>blocks sight for 14 seconds</span></button>
+      <button type="button" data-buy="g:flash"><b>Flare Flash <span class="price">$200</span></b><span>blinds anyone facing the pop</span></button>
+      <button type="button" data-buy="g:he"><b>Surge Charge <span class="price">$300</span></b><span>explosive · clears a corner</span></button>
+    </div>
+    <button id="buy-close" type="button">Close [B]</button>
+  </section>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three/three.module.min.js"
+  }
+}
+</script>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
